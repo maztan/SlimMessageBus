@@ -73,7 +73,7 @@ namespace Sample.Simple.ConsoleApp
         private static IMessageBus CreateMessageBus(IConfiguration configuration, IServiceProvider services)
         {
             // Choose your provider
-            var provider = Provider.Redis;
+            var provider = Provider.Kafka;
 
             // Provide your event hub-names OR kafka/service bus topic names
             var topicForAddCommand = "add-command";
@@ -206,11 +206,12 @@ namespace Sample.Simple.ConsoleApp
                             {
                                 ProducerConfig = (config) =>
                                 {
-                                    AddSsl(config);
+                                    //AddSsl(config);
                                 },
                                 ConsumerConfig = (config) =>
                                 {
-                                    AddSsl(config);
+                                    config.AutoOffsetReset = AutoOffsetReset.Earliest;
+                                    //AddSsl(config);
                                 }
 
                             }); // Or use Apache Kafka as provider
