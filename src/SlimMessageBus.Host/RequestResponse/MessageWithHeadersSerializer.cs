@@ -1,6 +1,7 @@
 namespace SlimMessageBus.Host
 {
     using System;
+    using System.Collections.Generic;
     using System.Text;
     using SlimMessageBus.Host.Serialization;
 
@@ -70,7 +71,9 @@ namespace SlimMessageBus.Host
 
         protected MessageWithHeaders Deserialize(byte[] payload)
         {
-            var message = new MessageWithHeaders();
+            if (payload is null) throw new ArgumentNullException(nameof(payload));
+
+            var messageHeaders = new Dictionary<string, string>(); 
 
             var i = 0;
             var headerCount = payload[i++];
@@ -80,16 +83,19 @@ namespace SlimMessageBus.Host
                 i += ReadString(payload, i, out var key);
                 i += ReadString(payload, i, out var value);
 
-                message.Headers.Add(key, value);
+                messageHeaders.Add(key, value);
             }
+
+            byte[] messagePayload = null;
 
             var payloadSize = payload.Length - i;
             if (payloadSize > 0)
             {
-                message.Payload = new byte[payload.Length - i];
-                Array.Copy(payload, i, message.Payload, 0, message.Payload.Length);
+                messagePayload = new byte[payload.Length - i];
+                Array.Copy(payload, i, messagePayload, 0, messagePayload.Length);
             }
-            return message;
+
+            return new MessageWithHeaders(messagePayload, messageHeaders);
         }
 
         #region Implementation of IMessageSerializer

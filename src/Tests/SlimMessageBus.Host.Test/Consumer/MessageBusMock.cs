@@ -64,6 +64,7 @@ namespace SlimMessageBus.Host.Test
             BusMock = new Mock<MessageBusBase>(mbSettings);
             BusMock.SetupGet(x => x.Settings).Returns(mbSettings);
             BusMock.SetupGet(x => x.CurrentTime).Returns(() => CurrentTime);
+            BusMock.Setup(x => x.CreateHeaders()).CallBase();
         }
     }
 }

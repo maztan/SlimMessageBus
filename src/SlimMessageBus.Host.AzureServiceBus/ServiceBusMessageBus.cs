@@ -194,6 +194,7 @@
             var kind = (PathKind)requestMessage.GetHeaderAsInt(RequestHeaderReplyToKind);
 
             var responseMessagePayload = SerializeResponse(consumerSettings.ResponseType, response, responseMessage);
+            var responsePayload = response != null ? Settings.Serializer.Serialize(responseType, response) : null;
 
             return ProduceToTransport(consumerSettings.ResponseType, response, replyTo, responseMessagePayload, kind);
         }
