@@ -3,7 +3,6 @@ namespace SlimMessageBus.Host
     using System;
     using System.Collections.Generic;
     using System.Globalization;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.Extensions.Logging;
@@ -252,7 +251,7 @@ namespace SlimMessageBus.Host
             return path;
         }
 
-        public abstract Task ProduceToTransport(Type messageType, object message, string path, byte[] messagePayload, IEnumerable<KeyValuePair<string, string>> messageHeaders = null);
+        public abstract Task ProduceToTransport(Type messageType, object message, string path, byte[] messagePayload, IDictionary<string, object> messageHeaders = null);
 
         public virtual Task Publish(Type messageType, object message, string path = null)
         {
@@ -279,7 +278,7 @@ namespace SlimMessageBus.Host
 
         protected string GetMessageTypeString(Type type) => type.AssemblyQualifiedName;
 
-        public virtual IDictionary<string, string> CreateHeaders() => new Dictionary<string, string>(10);
+        public virtual IDictionary<string, object> CreateHeaders() => new Dictionary<string, object>(10);
 
         #region Implementation of IPublishBus
 
@@ -373,7 +372,7 @@ namespace SlimMessageBus.Host
             }
         }
 
-        public virtual Task ProduceRequest(object request, IDictionary<string, string> headers, string path, ProducerSettings producerSettings)
+        public virtual Task ProduceRequest(object request, IDictionary<string, object> headers, string path, ProducerSettings producerSettings)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
             if (headers == null) throw new ArgumentNullException(nameof(headers));
@@ -387,7 +386,7 @@ namespace SlimMessageBus.Host
             return ProduceToTransport(producerSettings.MessageType, request, path, requestPayload, headers);
         }
 
-        private void AddMessageTypeHeader(object message, IDictionary<string, string> headers)
+        private void AddMessageTypeHeader(object message, IDictionary<string, object> headers)
         {
             if (message != null)
             {
@@ -395,13 +394,13 @@ namespace SlimMessageBus.Host
             }
         }
 
-        public virtual Task ProduceResponse(object request, IDictionary<string, string> requestHeaders, object response, IDictionary<string, string> responseHeaders, ConsumerSettings consumerSettings)
+        public virtual Task ProduceResponse(object request, IDictionary<string, object> requestHeaders, object response, IDictionary<string, object> responseHeaders, ConsumerSettings consumerSettings)
         {
             if (requestHeaders == null) throw new ArgumentNullException(nameof(requestHeaders));
             if (responseHeaders == null) throw new ArgumentNullException(nameof(responseHeaders));
             if (consumerSettings == null) throw new ArgumentNullException(nameof(consumerSettings));
 
-            if (!requestHeaders.TryGetHeader(ReqRespMessageHeaders.ReplyTo, out string replyTo))
+            if (!requestHeaders.TryGetHeader(ReqRespMessageHeaders.ReplyTo, out object replyTo))
             {
                 throw new MessageBusException($"The header {ReqRespMessageHeaders.ReplyTo} was missing on the message");
             }
@@ -412,7 +411,7 @@ namespace SlimMessageBus.Host
                 ? Settings.Serializer.Serialize(consumerSettings.ResponseType, response)
                 : null;
 
-            return ProduceToTransport(consumerSettings.ResponseType, response, replyTo, responsePayload, responseHeaders);
+            return ProduceToTransport(consumerSettings.ResponseType, response, (string)replyTo, responsePayload, responseHeaders);
         }
 
         #region Implementation of IRequestResponseBus
@@ -440,7 +439,7 @@ namespace SlimMessageBus.Host
         /// <param name="responsePayload"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        public virtual Task<Exception> OnResponseArrived(byte[] responsePayload, string path, IDictionary<string, string> responseHeaders)
+        public virtual Task<Exception> OnResponseArrived(byte[] responsePayload, string path, IDictionary<string, object> responseHeaders)
         {
             if (!responseHeaders.TryGetHeader(ReqRespMessageHeaders.RequestId, out string requestId))
             {

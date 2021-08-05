@@ -32,7 +32,7 @@ namespace SlimMessageBus.Host
                 // 2 byte for key length
                 n += StringLengthFieldSize + _encoding.GetByteCount(header.Key);
                 // 2 byte for value length
-                n += StringLengthFieldSize + _encoding.GetByteCount(header.Value);
+                n += StringLengthFieldSize + _encoding.GetByteCount(header.Value.ToString());
             }
             n += message.Payload?.Length ?? 0;
 
@@ -46,7 +46,7 @@ namespace SlimMessageBus.Host
             foreach (var header in message.Headers)
             {
                 i += WriteString(payload, i, header.Key);
-                i += WriteString(payload, i, header.Value);
+                i += WriteString(payload, i, header.Value.ToString());
             }
 
             message.Payload?.CopyTo(payload, i);
@@ -73,7 +73,7 @@ namespace SlimMessageBus.Host
         {
             if (payload is null) throw new ArgumentNullException(nameof(payload));
 
-            var messageHeaders = new Dictionary<string, string>(); 
+            var messageHeaders = new Dictionary<string, object>(); 
 
             var i = 0;
             var headerCount = payload[i++];

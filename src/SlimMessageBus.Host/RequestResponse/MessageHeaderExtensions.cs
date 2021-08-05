@@ -6,7 +6,7 @@
 
     public static class MessageHeaderExtensions
     {
-        public static void SetHeader(this IDictionary<string, string> headers, string header, string value)
+        public static void SetHeader<T>(this IDictionary<string, object> headers, string header, T value)
         {
             if (header is null) throw new ArgumentNullException(nameof(headers));
 
@@ -20,28 +20,36 @@
             }
         }
 
-        public static void SetHeader(this IDictionary<string, string> headers, string header, int value) =>
-            headers.SetHeader(header, value.ToString(CultureInfo.InvariantCulture));
-
-        public static void SetHeader(this IDictionary<string, string> headers, string header, DateTimeOffset dt) =>
+        public static void SetHeader(this IDictionary<string, object> headers, string header, DateTimeOffset dt) =>
             headers.SetHeader(header, dt.ToFileTime().ToString(CultureInfo.InvariantCulture));
 
-        public static int GetHeaderAsInt(this IDictionary<string, string> headers, string header)
+        public static int GetHeaderAsInt(this IDictionary<string, object> headers, string header)
         {
             if (header is null) throw new ArgumentNullException(nameof(headers));
 
-            var v = headers[header];
-            return int.Parse(v, CultureInfo.InvariantCulture);
+            var v = (int)headers[header];
+            return v;
         }
 
-        public static bool TryGetHeader(this IDictionary<string, string> headers, string header, out string value) =>
+        public static bool TryGetHeader(this IDictionary<string, object> headers, string header, out object value) =>
             headers.TryGetValue(header, out value);
 
-        public static bool TryGetHeader(this IDictionary<string, string> headers, string header, out DateTimeOffset dt)
+        public static bool TryGetHeader(this IDictionary<string, object> headers, string header, out string value)
+        {
+            if (headers.TryGetValue(header, out object objValue))
+            {
+                value = (string)objValue;
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
+        public static bool TryGetHeader(this IDictionary<string, object> headers, string header, out DateTimeOffset dt)
         {
             if (header != null && headers.TryGetValue(header, out var dtStr))
             {
-                var dtLong = long.Parse(dtStr, CultureInfo.InvariantCulture);
+                var dtLong = (long)dtStr;
                 dt = DateTimeOffset.FromFileTime(dtLong);
                 return true;
             }
@@ -49,7 +57,7 @@
             return false;
         }
 
-        public static bool TryGetHeader(this IDictionary<string, string> headers, string header, out DateTimeOffset? dt)
+        public static bool TryGetHeader(this IDictionary<string, object> headers, string header, out DateTimeOffset? dt)
         {
             if (headers.TryGetHeader(header, out DateTimeOffset dt2))
             {

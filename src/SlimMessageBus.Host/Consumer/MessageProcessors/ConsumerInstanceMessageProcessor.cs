@@ -252,7 +252,7 @@
             return response;
         }
 
-        protected object DeserializeMessage(TMessage msg, out IDictionary<string, string> headers, out string requestId, out DateTimeOffset? expires)
+        protected object DeserializeMessage(TMessage msg, out IDictionary<string, object> headers, out string requestId, out DateTimeOffset? expires)
         {
             var messageWithHeaders = _messageProvider(msg);
 
@@ -273,7 +273,7 @@
             return message;
         }
 
-        private async Task ProduceResponse(string requestId, object request, IDictionary<string, string> requestHeaders, object response, string responseError)
+        private async Task ProduceResponse(string requestId, object request, IDictionary<string, object> requestHeaders, object response, string responseError)
         {
             // send the response (or error response)
             _logger.LogDebug("Serializing the response {0} of type {1} for RequestId: {2}...", response, _consumerSettings.ResponseType, requestId);
