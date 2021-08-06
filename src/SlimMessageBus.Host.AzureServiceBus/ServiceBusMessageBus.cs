@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
+    using Microsoft.Azure.ServiceBus.Core;
     using Microsoft.Extensions.Logging;
     using SlimMessageBus.Host.AzureServiceBus.Consumer;
     using SlimMessageBus.Host.Collections;
@@ -145,7 +146,7 @@
                 {
                     if (header.Key != MessageHeaderUseKind) // Skip special header that is used to convey routing information via headers.
                     {
-                        m.UserProperties.Add(header.Key, header.Value?.ToString());
+                        m.UserProperties.Add(header.Key, header.Value);
                     }
                 }
             }
@@ -165,16 +166,11 @@
                 }
             }
 
-            if (kind == PathKind.Topic)
-            {
-                var topicProducer = _producerByTopic.GetOrAdd(path);
-                await topicProducer.SendAsync(m).ConfigureAwait(false);
-            }
-            else
-            {
-                var queueProducer = _producerByQueue.GetOrAdd(path);
-                await queueProducer.SendAsync(m).ConfigureAwait(false);
-            }
+            var senderClient = kind == PathKind.Topic 
+                ? (ISenderClient)_producerByTopic.GetOrAdd(path) 
+                : _producerByQueue.GetOrAdd(path);
+
+            await senderClient.SendAsync(m).ConfigureAwait(false);
 
             _logger.LogDebug("Delivered message {Message} of type {MessageType} on {PathKind} {Path}", message, messageType.Name, kind, path);
         }
